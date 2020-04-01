@@ -143,7 +143,7 @@ router.route('/attendanceStatus')
                 let array = [];
                 const getArray = async () => {
                     return Promise.all(
-                        items.map( async item => {
+                        await items.map( async item => {
                             var lastSubmitted = item.lastSubmitted;
                             var d = new Date();
                             var date = d.getDate();
@@ -172,11 +172,12 @@ router.route('/attendanceStatus')
                 };
                 console.log("outside ", array);
                 getArray()
-                    .then(
-                        res.status(200).json({
-                            message: "Successful",
-                            array,
-                        })
+                    .then( () => {
+                            res.status(200).json({
+                                message: "Successful",
+                                array,
+                            })
+                        }
                     )
                     .catch(err => {
                         throw new Error(err);
