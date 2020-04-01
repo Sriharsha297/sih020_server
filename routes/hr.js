@@ -3,7 +3,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const Fence  = require('../models/Fence')
+const Fence  = require('../models/Fence');
+const Attendance = require('../models/Attendence');
+const Employee = require('../models/Employee');
 
 //Login 
 
@@ -101,15 +103,25 @@ router.route('/manualAttendance')
             }
             else 
             {
-                Attendance.updateOne({empId,branchName},{totalPresent : attendanceObj.totalPresent +1,lastSubmitted : today})
-                .then(() =>{
-                    res.status(200).json({
-                        message:"Successful"
+                var d = new Date();
+                var date = d.getDate();
+                if(date != attendanceObj.lastSubmitted)
+                {
+                    Attendance.updateOne({empId,branchName},{totalPresent : attendanceObj.totalPresent +1,lastSubmitted : today})
+                    .then(() =>{
+                        res.status(200).json({
+                            message:"Successful"
+                        })
                     })
-                })
-                .catch(err =>{
-                    throw new Error(err);
-                })
+                    .catch(err =>{
+                        throw new Error(err);
+                    })
+                }
+                else{
+                    res.status(500).json({
+                        message:"Attendance already Submitted!"
+                    })
+                }
             }
 
         })
@@ -121,13 +133,61 @@ router.route('/manualAttendance')
         })
     })
 
+// Attendance Status
+
+router.route('/attendanceStatus')
+    .get((req, res) => {
+        branchName = req.query.branchName;
+        Attendance.find({ branchName })
+            .then((items) => {
+                let array = [];
+                const getArray = async () => {
+                    return Promise.all(
+                        items.map( async item => {
+                            var lastSubmitted = item.lastSubmitted;
+                            var d = new Date();
+                            var date = d.getDate();
+                            if (date == lastSubmitted) {
+                                status = "present";
+                            }
+                            else {
+                                status = "absent";
+                            }
+                            try {
+                                const emp = await Employee.find({ empId: item.empId });
+                                const resObj = {
+                                    username: emp[0].username,
+                                    empId: emp[0].empId,
+                                    totalPresent: item.totalPresent,
+                                    leavesTaken: item.leavesTaken,
+                                    status,
+                                };
+                                array.push(resObj);
+                                console.log("inside: ", array);
+                            } catch(err) {
+                                throw new Error(err);
+                            }
+                        })
+                    );
+                };
+                console.log("outside ", array);
+                getArray()
+                    .then(
+                        res.status(200).json({
+                            message: "Successful",
+                            array,
+                        })
+                    )
+                    .catch(err => {
+                        throw new Error(err);
+                    });
+            })
+            .catch((err) => {
+                console.log(err)
+                res.status(500).json({
+                    message: "Internal Server Error"
+                })
+            });
+    })
+
 module.exports = router;
-
-
-      // const polygon = new google.maps.Polygon({
-      //   paths: res.data,
-      // });
-      // const currentPosition = new google.maps.LatLng(17.3621969, 78.553551);
-      // var insideFence = google.maps.geometry.poly
-      // .containsLocation(currentPosition, polygon);
-      // console.log(insideFence);

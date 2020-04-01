@@ -3,15 +3,16 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Attendance = require('../models/Attendence')
 const Fence = require('../models/Fence')
+// const Employee = require('../models/Employee')
+// const auth = require('../middleware/auth')
 
 //login
 
 router.route('/login')
-    .post((req,res) => {
-        console.log(req.body)
-        if(req.body.username==="harsha" && req.body.password === "harsha"){
-            
-        }
+    .post(async (req,res) => {
+        // const employee=await Employee.findByCredentials(req.body.empId,req.body.password)
+        // const token = await employee.generateAuthToken()
+        // res.send({employee:employee,token})  
         res.status(200).json({
             message:"Successful"
         })
@@ -45,6 +46,8 @@ router.route('/getConditions')
         })
     }) 
 })
+
+
 
 
 // Submit Attendance
