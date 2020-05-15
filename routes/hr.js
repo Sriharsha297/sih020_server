@@ -1,30 +1,31 @@
-/*global google*/
-
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Fence  = require('../models/Fence');
 const Attendance = require('../models/Attendence');
+const Hr = require('../models/Hr')
 const Employee = require('../models/Employee');
 const Leave = require('../models/Leave')
+const auth = require('../middleware/HAuth')
 
 //Login 
 
 router.route('/login')
-    .post((req,res) => {
-        console.log(req.body)
-        if(req.body.username==="harsha" && req.body.password === "harsha"){
-            
+    .post(async(req,res) => {
+        try{
+            const hr=await Hr.findByCredentials(req.body.hrId,req.body.password)
+            const token = await hr.generateAuthToken()
+            res.send({hr:hr,token})   
         }
-        res.status(200).json({
-            message:"Successful"
-        })
+        catch(e){
+            res.status(400).send()
+        }
     })
 
 //Save Fence
 
 router.route('/saveFence')
-.post((req,res) => {
+.post(auth,(req,res) => {
     console.log(req.body)
     branchName = "hyd"
     Fence.findOneAndRemove({branchName},function(err){
@@ -47,7 +48,7 @@ router.route('/saveFence')
 //Get Fence
 
 router.route('/getFence')
-.get((req,res) => {
+.get(auth,(req,res) => {
     console.log(req.query);
     branchName = req.query.branchName;
     Fence.find({branchName})
@@ -67,7 +68,7 @@ router.route('/getFence')
 //Remove Fence
 
 router.route('/deleteFence')
-.get((req,res) => {
+.get(auth,(req,res) => {
     console.log(req.query);
     branchName = req.query.branchName;
     Fence.findOneAndRemove({branchName},function(err){
@@ -81,7 +82,7 @@ router.route('/deleteFence')
 // Manual Attendence 
 
 router.route('/manualAttendance')
-    .post((req,res) => {
+    .post(auth,(req,res) => {
         empId = req.query.empId;
         branchName = req.query.branchName;
         var d =new Date();
@@ -137,7 +138,7 @@ router.route('/manualAttendance')
 // Attendance Status
 
 router.route('/attendanceStatus')
-    .get((req, res) => {
+    .get(auth,(req, res) => {
         branchName = req.query.branchName;
         Attendance.find({ branchName })
             .then((items) => {
@@ -195,7 +196,7 @@ router.route('/attendanceStatus')
 // leaveApplications
 
 router.route('/leaveApplications')
-    .get((req, res) => {
+    .get(auth,(req, res) => {
         branchName = req.query.branchName;
         Leave.find({ branchName })
             .then((items) => {
@@ -241,5 +242,16 @@ router.route('/leaveApplications')
                 })
             });
     })
-
+router.post('/logout',auth,async(req,res)=>{
+        try{
+            req.hr.tokens=req.hr.tokens.filter((token)=>{
+                return token.token!== req.token
+            })
+            await req.hr.save()
+            res.send()
+        }catch(e){
+            res.status(500).send()
+        }
+    
+    })
 module.exports = router;
