@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const Fence  = require('../models/Fence');
 const Attendance = require('../models/Attendence');
 const Employee = require('../models/Employee');
+const Leave = require('../models/Leave')
 
 //Login 
 
@@ -171,6 +172,56 @@ router.route('/attendanceStatus')
                     );
                 };
                 console.log("outside ", array);
+                getArray()
+                    .then( () => {
+                            res.status(200).json({
+                                message: "Successful",
+                                array,
+                            })
+                        }
+                    )
+                    .catch(err => {
+                        throw new Error(err);
+                    });
+            })
+            .catch((err) => {
+                console.log(err)
+                res.status(500).json({
+                    message: "Internal Server Error"
+                })
+            });
+    })
+
+// leaveApplications
+
+router.route('/leaveApplications')
+    .get((req, res) => {
+        branchName = req.query.branchName;
+        Leave.find({ branchName })
+            .then((items) => {
+                let array = [];
+                const getArray = async () => {
+                return Promise.all(
+                    await items.map(async item =>{
+                        try {
+                            const emp = await Employee.find({ empId: item.empId });
+                            const attendance = await Attendance.find({empId: item.empId})
+                            const resObj = {
+                                username: emp[0].username,
+                                empId: emp[0].empId,
+                                leaveType: item.leaveType,
+                                days: item.days,
+                                date: item.date,
+                                reason: item.reason,
+                                totalPresent: attendance[0].totalPresent,
+                                leavesTaken : attendance[0].leavesTaken,
+                            };
+                            array.push(resObj);
+                        } catch(err) {
+                            throw new Error(err);
+                        }
+                    })
+                )}
                 getArray()
                     .then( () => {
                             res.status(200).json({

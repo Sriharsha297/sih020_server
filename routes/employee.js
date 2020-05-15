@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Attendance = require('../models/Attendence')
 const Fence = require('../models/Fence')
+const Leave = require('../models/Leave')
 // const Employee = require('../models/Employee')
 // const auth = require('../middleware/auth')
 
@@ -96,6 +97,75 @@ router.route('/submitAttendance')
             })
         })
     })
+
+// Submit Leave
+
+router.route('/submitLeave')
+    .post((req,res) => {
+        Leave.find({empId: req.body.leaveObj.empId , date : req.body.leaveObj.date})
+        .then((obj) =>{
+            if(obj.length == 0)
+            {
+                Leave.create(req.body.leaveObj)
+                .then(() =>{
+                    res.status(200).json({
+                        message:"success"
+                    })
+                })
+                .catch(err =>{
+                    throw new Error(err);
+                })
+            }
+            else{
+                res.status(200).json({
+                    message: "exist"
+                })
+            }
+        })
+        .catch(err =>{
+            res.status(500).json({
+                message:"Internal Server Error"
+            })
+        })
+    })
+
+// Leave History
+
+router.route('/leaveHistory')
+.get((req,res) => {
+    empId = req.query.empId;
+    Leave.find({empId,})
+    .then((array) =>{
+        res.status(200).json({
+            message: "success",
+            array,
+        })
+    })
+    .catch(err =>{
+        res.status(500).json({
+            message:"Internal Server Error"
+        })
+    })
+})
+
+// Track Attendance
+
+router.route('/trackAttendance')
+.get((req,res) => {
+    empId = req.query.empId;
+    Attendance.find({empId,})
+    .then((array) =>{
+        res.status(200).json({
+            message: "success",
+            array,
+        })
+    })
+    .catch(err =>{
+        res.status(500).json({
+            message:"Internal Server Error"
+        })
+    })
+})
 
 
 module.exports = router;

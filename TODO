@@ -1,5 +1,7 @@
-1.Routes for Admin
+Employee :
 
-2.Routes for Employee
-
-3.Routes for Hr
+    FE: 
+    1. leave history -- done
+    2. Buf Fix(in Attendance Page)
+HR : 
+    1. Leave Applications (Both server and FE)
