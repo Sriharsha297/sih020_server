@@ -4,25 +4,28 @@ const mongoose = require('mongoose');
 const Attendance = require('../models/Attendence')
 const Fence = require('../models/Fence')
 const Leave = require('../models/Leave')
-// const Employee = require('../models/Employee')
-// const auth = require('../middleware/auth')
+ const Employee = require('../models/Employee')
+ const auth = require('../middleware/auth')
 
 //login
 
 router.route('/login')
-    .post(async (req,res) => {
-        // const employee=await Employee.findByCredentials(req.body.empId,req.body.password)
-        // const token = await employee.generateAuthToken()
-        // res.send({employee:employee,token})  
-        res.status(200).json({
-            message:"Successful"
-        })
+    .post(async(req,res) => {
+        try{
+            const employee=await Employee.findByCredentials(req.body.empId,req.body.password)
+            const token = await employee.generateAuthToken()
+            res.send({employee:employee,token})   
+        }
+        catch(e){
+            res.status(400).send()
+        }
     })
+
 
 //Get Fence
 
 router.route('/getConditions')
-.get((req,res) => {
+.get(auth,(req,res) => {
     empId = req.query.empId;
     branchName = req.query.branchName;
     Fence.find({branchName})
@@ -54,7 +57,7 @@ router.route('/getConditions')
 // Submit Attendance
 
 router.route('/submitAttendance')
-    .post((req,res) => {
+    .post(auth,(req,res) => {
         empId = req.query.empId;
         branchName = req.query.branchName;
         var d =new Date();
@@ -101,7 +104,7 @@ router.route('/submitAttendance')
 // Submit Leave
 
 router.route('/submitLeave')
-    .post((req,res) => {
+    .post(auth,(req,res) => {
         Leave.find({empId: req.body.leaveObj.empId , date : req.body.leaveObj.date})
         .then((obj) =>{
             if(obj.length == 0)
@@ -132,7 +135,7 @@ router.route('/submitLeave')
 // Leave History
 
 router.route('/leaveHistory')
-.get((req,res) => {
+.get(auth,(req,res) => {
     empId = req.query.empId;
     Leave.find({empId,})
     .then((array) =>{
@@ -151,7 +154,7 @@ router.route('/leaveHistory')
 // Track Attendance
 
 router.route('/trackAttendance')
-.get((req,res) => {
+.get(auth,(req,res) => {
     empId = req.query.empId;
     Attendance.find({empId,})
     .then((array) =>{
@@ -166,6 +169,17 @@ router.route('/trackAttendance')
         })
     })
 })
+router.post('/logout',auth,(req,res)=>{
+    try{
+        req.employee.tokens=req.employee.tokens.filter((token)=>{
+            return token.token!== req.token
+        })
+        req.employee.save()
+        res.send()
+    }catch(e){
+        res.status(500).send()
+    }
 
+})
 
 module.exports = router;
