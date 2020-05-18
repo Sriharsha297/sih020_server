@@ -257,19 +257,23 @@ router.route('/leaveApplications')
 
 router.route('/acceptLeave')
 .put((req,res) => {
+    leaveId = req.query.leaveId;
     empId = req.query.empId;
-    Leave.findOneAndUpdate({empId},{status:"Accepted"})
+    Leave.findOneAndUpdate({_id:leaveId},{status:"Accepted"})
     .then(yo =>{
+        console.log("266",yo);
         Attendance.findOne({empId})
         .then(attendanceObj =>{
+            console.log("269",attendanceObj)
             Attendance.updateOne({empId},{leavesLeft:attendanceObj.leavesLeft-1})
-            .then(res =>{
+            .then(r =>{
                 res.status(200).json({
                     message:"Accepted",
-                }).catch(err => {
-                    throw new Error(err);
                 });
             })
+            .catch(err => {
+                throw new Error(err);
+            });
         }).catch(err => {
             throw new Error(err);
         });
