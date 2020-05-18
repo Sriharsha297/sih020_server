@@ -36,6 +36,17 @@ const hrSchema=new mongoose.Schema({
         }
     }]
 })
+
+
+hrSchema.methods.toJSON = function () {
+    const hr = this
+    const hrObject = hr.toObject()
+    delete hrObject.password
+    delete hrObject.tokens
+   
+    return hrObject
+}
+
 //token
 hrSchema.methods.generateAuthToken=async function () {
     const hr = this
@@ -43,9 +54,12 @@ hrSchema.methods.generateAuthToken=async function () {
     hr.tokens=hr.tokens.concat({token})
     await hr.save()
     return token
-
 }
+
+
 //login
+
+
 hrSchema.statics.findByCredentials =async (hrId,password)=>{
     const hr=await Hr.findOne({hrId})
     if(!hr)
@@ -58,7 +72,11 @@ hrSchema.statics.findByCredentials =async (hrId,password)=>{
     }
     return hr
 }
+
+
 //hash
+
+
 hrSchema.pre('save',async function (next) { 
     const hr=this
     

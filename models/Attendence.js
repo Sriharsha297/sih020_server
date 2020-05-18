@@ -13,7 +13,7 @@ const attendanceSchema= new mongoose.Schema({
     {
         type : Number,
     },
-    leavesTaken :
+    leavesLeft :
     {
         type : Number,
     },

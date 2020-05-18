@@ -5,7 +5,7 @@ const Attendance = require('../models/Attendence')
 const Fence = require('../models/Fence')
 const Leave = require('../models/Leave')
  const Employee = require('../models/Employee')
- const auth = require('../middleware/auth')
+ const auth = require('../middleware/Auth')
 
 //login
 
@@ -14,7 +14,11 @@ router.route('/login')
         try{
             const employee=await Employee.findByCredentials(req.body.empId,req.body.password)
             const token = await employee.generateAuthToken()
-            res.send({employee:employee,token})   
+            res.status(200).json({
+                message : "Sucess",
+                employee,
+                token
+            })    
         }
         catch(e){
             res.status(400).send()
@@ -32,11 +36,18 @@ router.route('/getConditions')
     .then((ok) =>{
         Attendance.find({empId})
         .then((attendanceObj)=>{
-            lastSubmitted = attendanceObj[0].lastSubmitted;
+            console.log(attendanceObj);
+            if(attendanceObj.length == 0 ){
+                lastSubmitted = 0;
+            }
+            else
+            {
+                lastSubmitted = attendanceObj[0].lastSubmitted;
+            }
             res.status(200).json({
                 message:"Successful",
                 ok,
-                lastSubmitted,
+                lastSubmitted ,
             })
         })
         .catch(err =>{
@@ -68,7 +79,7 @@ router.route('/submitAttendance')
             {
                 console.log("create");
 
-                Attendance.create({empId,branchName,totalPresent : 1,leavesTaken  : 0 , lastSubmitted : today})
+                Attendance.create({empId,branchName,totalPresent : 1,leavesLeft  : 15 , lastSubmitted : today})
                 .then(() =>{
                     res.status(200).json({
                         message:"Successful"
@@ -109,6 +120,11 @@ router.route('/submitLeave')
         .then((obj) =>{
             if(obj.length == 0)
             {
+                var d = new Date();
+                var m = d.getMonth()+1;
+                var appliedOn = d.getDate()+"-"+m+"-"+d.getFullYear();
+                req.body.leaveObj.status = "pending";
+                req.body.leaveObj.appliedOn = appliedOn;
                 Leave.create(req.body.leaveObj)
                 .then(() =>{
                     res.status(200).json({

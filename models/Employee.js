@@ -12,7 +12,7 @@ const empSchema=new mongoose.Schema({
         type:String
         
     },
-    username:{
+    name:{
         type:String,
        trim:true
     },
@@ -38,6 +38,15 @@ const empSchema=new mongoose.Schema({
     }]
 })
 
+
+empSchema.methods.toJSON = function () {
+    const employee = this
+    const empObject = employee.toObject()
+    delete empObject.password
+    delete empObject.tokens
+   
+    return empObject
+}
 
 // //token
 

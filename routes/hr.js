@@ -12,13 +12,19 @@ const auth = require('../middleware/HAuth')
 
 router.route('/login')
     .post(async(req,res) => {
+        
         try{
+            
             const hr=await Hr.findByCredentials(req.body.hrId,req.body.password)
             const token = await hr.generateAuthToken()
-            res.send({hr:hr,token})   
+            res.status(200).json({
+                message : "Sucess",
+                hr,
+                token
+            })   
         }
         catch(e){
-            res.status(400).send()
+            res.status(400).send();
         }
     })
 
@@ -26,12 +32,13 @@ router.route('/login')
 
 router.route('/saveFence')
 .post(auth,(req,res) => {
-    console.log(req.body)
-    branchName = "hyd"
+    console.log("/saveFence",req.body)
+    branchName = req.query.branchName;
     Fence.findOneAndRemove({branchName},function(err){
     if(err) console.log(err);
         Fence.create({branchName,fence : req.body})
         .then((ok) =>{
+            console.log('working');
             res.status(200).json({
                 message:"Successful",
                 branchName,
@@ -49,7 +56,7 @@ router.route('/saveFence')
 
 router.route('/getFence')
 .get(auth,(req,res) => {
-    console.log(req.query);
+    console.log('/getFence',req.body);
     branchName = req.query.branchName;
     Fence.find({branchName})
     .then((ok) =>{
@@ -69,7 +76,7 @@ router.route('/getFence')
 
 router.route('/deleteFence')
 .get(auth,(req,res) => {
-    console.log(req.query);
+    console.log("/deleteFence",req.query);
     branchName = req.query.branchName;
     Fence.findOneAndRemove({branchName},function(err){
         console.log(err)
@@ -158,10 +165,10 @@ router.route('/attendanceStatus')
                             try {
                                 const emp = await Employee.find({ empId: item.empId });
                                 const resObj = {
-                                    username: emp[0].username,
+                                    username: emp[0].name,
                                     empId: emp[0].empId,
                                     totalPresent: item.totalPresent,
-                                    leavesTaken: item.leavesTaken,
+                                    leavesLeft: item.leavesLeft,
                                     status,
                                 };
                                 array.push(resObj);
@@ -208,14 +215,17 @@ router.route('/leaveApplications')
                             const emp = await Employee.find({ empId: item.empId });
                             const attendance = await Attendance.find({empId: item.empId})
                             const resObj = {
-                                username: emp[0].username,
+                                username: emp[0].name,
                                 empId: emp[0].empId,
                                 leaveType: item.leaveType,
                                 days: item.days,
                                 date: item.date,
                                 reason: item.reason,
+                                appliedOn: item.appliedOn,
                                 totalPresent: attendance[0].totalPresent,
-                                leavesTaken : attendance[0].leavesTaken,
+                                leavesLeft : attendance[0].leavesLeft,
+                                status: item.status,
+                                leaveId: item._id,
                             };
                             array.push(resObj);
                         } catch(err) {
@@ -242,7 +252,54 @@ router.route('/leaveApplications')
                 })
             });
     })
+
+//Accept Leave
+
+router.route('/acceptLeave')
+.put((req,res) => {
+    empId = req.query.empId;
+    Leave.findOneAndUpdate({empId},{status:"Accepted"})
+    .then(yo =>{
+        Attendance.findOne({empId})
+        .then(attendanceObj =>{
+            Attendance.updateOne({empId},{leavesLeft:attendanceObj.leavesLeft-1})
+            .then(res =>{
+                res.status(200).json({
+                    message:"Accepted",
+                }).catch(err => {
+                    throw new Error(err);
+                });
+            })
+        }).catch(err => {
+            throw new Error(err);
+        });
+    })
+    .catch((err) => {
+        console.log(err)
+        res.status(500).json({
+            message: "Internal Server Error"
+        })
+    });  
+})
+
+//Reject Leave
+
+router.route('/rejectLeave')
+.put((req,res) => {
+    console.log("hhaa",req.query);
+    leaveId = req.query.leaveId;
+    Leave.findOneAndUpdate({_id:(leaveId)},{status:"Rejected"},function(err){
+        console.log(err)
+        res.status(200).json({
+            message:"Rejected",
+        })
+    })
+})
+
+// Logout
+
 router.post('/logout',auth,async(req,res)=>{
+    console.log("logout",req.headers);
         try{
             req.hr.tokens=req.hr.tokens.filter((token)=>{
                 return token.token!== req.token

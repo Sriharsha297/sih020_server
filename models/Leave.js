@@ -24,8 +24,15 @@ const leaveSchema= new mongoose.Schema({
     reason :
     {
         type : String,
+    },
+    status : 
+    {
+        type : String,
+    },
+    appliedOn :
+    {
+        type: String,
     }
-    
 })
 const Leave = mongoose.model('Leave',leaveSchema)
 
