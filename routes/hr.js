@@ -259,13 +259,14 @@ router.route('/acceptLeave')
 .put((req,res) => {
     leaveId = req.query.leaveId;
     empId = req.query.empId;
+    days = req.query.days;
     Leave.findOneAndUpdate({_id:leaveId},{status:"Accepted"})
     .then(yo =>{
         console.log("266",yo);
         Attendance.findOne({empId})
         .then(attendanceObj =>{
             console.log("269",attendanceObj)
-            Attendance.updateOne({empId},{leavesLeft:attendanceObj.leavesLeft-1})
+            Attendance.updateOne({empId},{leavesLeft:attendanceObj.leavesLeft - days})
             .then(r =>{
                 res.status(200).json({
                     message:"Accepted",
